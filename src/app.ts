@@ -4,10 +4,10 @@ import cors from "cors";
 import analyticsRoutes from './features/analytics/routes/analytics.routes';
 
 export const app = express();
-const PORT = 3003;
+const PORT = 3005;
 
 app.get('/', (req, res) => {
-    res.send('Server is running on port 3000');
+    res.send('Server is running on port 3005');
 });
 app.use(express.json());
 app.use(cors());
