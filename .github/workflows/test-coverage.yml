@@ -30,4 +30,6 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: Practica-Supervisada-UCR-2025/Backend-MS-Base
+          slug: ToughKnee/Devops-Backend-MS-Analytics
+
+
