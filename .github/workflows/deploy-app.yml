@@ -1,0 +1,33 @@
+name: Deploy Backend-Analytics App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      build-new-version:
+        description: 'Build now and deploy the app'
+        default: 'true'
+        required: false
+
+
+jobs:
+  deploy-web-app:
+    uses: Practica-Supervisada-UCR-2025/Repo-DevOps/.github/workflows/deploy-app-reusable-workflow.yml@main
+    with:
+      app_path: "."
+      image_name: "backend-analytics-app"
+      container_name: "backend-analytics-app"
+      production_server_port: "3004"
+      program_assigned_port: "3000"
+      env_directory: "backend-analytics-app"
+
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DEPLOYMENT_SERVER_HOST: ${{ secrets.DEPLOYMENT_SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+
+      ANY_ENV_FILE: ${{ secrets.ANY_ENV_FILE }}
