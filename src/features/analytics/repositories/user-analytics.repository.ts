@@ -1,6 +1,7 @@
 import client from '../../../config/database';
 import { InternalServerError } from '../../../utils/errors/api-error';
-import { GrowthDataPoint, IUserAnalyticsRepository, UserGrowthQueryParams } from './user-analytics.repository.interface';
+import { IUserAnalyticsRepository } from './user-analytics.repository.interface';
+import { DataPoint, TimeRangeQuery } from '../services/analytics-base.service';
 
 export class UserAnalyticsRepository implements IUserAnalyticsRepository {
   async getTotalUsers(): Promise<number> {
@@ -25,7 +26,7 @@ export class UserAnalyticsRepository implements IUserAnalyticsRepository {
     }
   }
 
-  async getUserGrowthData(params: UserGrowthQueryParams): Promise<GrowthDataPoint[]> {
+  async getUserGrowthData(params: TimeRangeQuery): Promise<DataPoint[]> {
     try {
       let dateFormat: string;
       let dateGroup: string;
