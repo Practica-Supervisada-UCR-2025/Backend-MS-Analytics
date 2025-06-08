@@ -1,19 +1,20 @@
 import { UserGrowthQueryDto } from '../dto/user-growth-query.dto';
-import { InternalServerError } from '../../../utils/errors/api-error';
-import { GrowthDataPoint, IUserAnalyticsRepository } from '../repositories/user-analytics.repository.interface';
+import { IUserAnalyticsRepository } from '../repositories/user-analytics.repository.interface';
 import { UserAnalyticsRepository } from '../repositories/user-analytics.repository';
+import { AnalyticsBaseService, DataPoint } from './analytics-base.service';
 
 interface UserGrowthResponse {
-  series: GrowthDataPoint[];
+  series: DataPoint[];
   totalUsers: number;
   totalActiveUsers: number;
   aggregatedByInterval: string;
 }
 
-export class UserAnalyticsService {
+export class UserAnalyticsService extends AnalyticsBaseService {
   private repository: IUserAnalyticsRepository;
   
   constructor(repository?: IUserAnalyticsRepository) {
+    super();
     this.repository = repository || new UserAnalyticsRepository();
   }
   
@@ -32,8 +33,12 @@ export class UserAnalyticsService {
         interval: query.interval || 'daily'
       });
       
-      // Generate series based on interval
-      const series = this.generateCumulativeSeries(growthData, query);
+      // Generate series based on interval 
+      const series = this.generateCompleteSeries(growthData, {
+        startDate: query.startDate!,
+        endDate: query.endDate!,
+        interval: query.interval || 'daily'
+      }, true); // true to indicate cumulative data
       
       return {
         series,
@@ -42,78 +47,7 @@ export class UserAnalyticsService {
         aggregatedByInterval: query.interval || 'daily'
       };
     } catch (error) {
-      console.error('Error in user growth stats service:', error);
-      throw new InternalServerError('Failed to retrieve user growth statistics');
+      this.handleServiceError(error, 'user growth statistics');
     }
-  }
-  
-  /**
-   * Generates a cumulative series of data points based on the interval
-   */
-  private generateCumulativeSeries(
-    growthData: GrowthDataPoint[], 
-    query: UserGrowthQueryDto
-  ): GrowthDataPoint[] {
-    return query.interval === 'daily' 
-      ? this.generateDailyCumulativeSeries(growthData, query.startDate!, query.endDate!)
-      : this.generateIntervalCumulativeSeries(growthData);
-  }
-  
-  /**
-   * Generates a complete daily series with cumulative counts
-   * Ensures all dates in the range have data points, even if zero
-   */
-  private generateDailyCumulativeSeries(
-    data: GrowthDataPoint[], 
-    startDate: string, 
-    endDate: string
-  ): GrowthDataPoint[] {
-    const series: GrowthDataPoint[] = [];
-    const dateMap = this.createDateCountMap(data);
-    
-    let cumulativeCount = 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
-      const count = dateMap.get(dateStr) || 0;
-      cumulativeCount += count;
-      series.push({
-        date: dateStr,
-        count: cumulativeCount
-      });
-    }
-    
-    return series;
-  }
-  
-  /**
-   * Generates a cumulative series for weekly or monthly intervals
-   */
-  private generateIntervalCumulativeSeries(data: GrowthDataPoint[]): GrowthDataPoint[] {
-    const series: GrowthDataPoint[] = [];
-    let cumulativeCount = 0;
-    
-    data.forEach(item => {
-      cumulativeCount += item.count;
-      series.push({
-        date: item.date,
-        count: cumulativeCount
-      });
-    });
-    
-    return series;
-  }
-  
-  /**
-   * Creates a Map of dates to count values for efficient lookup
-   */
-  private createDateCountMap(data: GrowthDataPoint[]): Map<string, number> {
-    const dateMap = new Map<string, number>();
-    data.forEach(item => {
-      dateMap.set(item.date, item.count);
-    });
-    return dateMap;
   }
 }
