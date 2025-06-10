@@ -20,7 +20,7 @@ jobs:
       image_name: "backend-analytics-app"
       container_name: "backend-analytics-app"
       production_server_port: "3004"
-      program_assigned_port: "3000"
+      program_assigned_port: "3005"
       env_directory: "backend-analytics-app"
 
     secrets:
