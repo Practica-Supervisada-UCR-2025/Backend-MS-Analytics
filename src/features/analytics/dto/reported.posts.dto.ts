@@ -1,47 +1,48 @@
 import * as yup from 'yup';
 
 export interface ReportedPostsQuery {
-  interval: 'daily' | 'weekly' | 'monthly';
-  startDate: string;
-  endDate: string;
+  interval?: 'daily' | 'weekly' | 'monthly';
+  startDate?: string;
+  endDate?: string;
 }
 
-export const reportedPostsQuerySchema = yup.object({
-  interval: yup
-    .string()
-    .oneOf(['daily', 'weekly', 'monthly'], 'Invalid interval. Must be daily, weekly, or monthly')
-    .default('daily'),
+const isValidDateString = (value: string): boolean => {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(value)) return false;
+  const date = new Date(value);
+  return !isNaN(date.getTime()) && value === date.toISOString().split('T')[0];
+};
 
-  startDate: yup
+const createDateField = (fieldName: string, fallbackDaysAgo = 0) =>
+  yup
     .string()
     .transform((value) => {
-      if (value) {
-        return value.split('T')[0];
-      }
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() - 30); 
-      return defaultDate.toISOString().split('T')[0];
+      if (!value) return value;
+      return value.split('T')[0]; // remove time if exists
     })
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid startDate format. Use YYYY-MM-DD')
-    .required('startDate is required'),
+    .default(() => {
+      const date = new Date();
+      date.setDate(date.getDate() - fallbackDaysAgo);
+      return date.toISOString().split('T')[0];
+    })
+    .test(`${fieldName}-format`, `Invalid ${fieldName} format. Use YYYY-MM-DD`, function (value) {
+      return value ? /^\d{4}-\d{2}-\d{2}$/.test(value) : false;
+    })
+    .test(`${fieldName}-valid`, `Invalid ${fieldName}`, function (value) {
+      return value ? isValidDateString(value) : false;
+    });
 
-  endDate: yup
-    .string()
-    .transform((value) => {
-      if (value) {
-        return value.split('T')[0];
-      }
-      return new Date().toISOString().split('T')[0];
-    })
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid endDate format. Use YYYY-MM-DD')
-    .required('endDate is required')
-    .test(
-      'date-range',
-      'startDate must be before or equal to endDate',
-      function (endDate) {
-        const { startDate } = this.parent;
-        if (!startDate || !endDate) return true;
-        return new Date(startDate) <= new Date(endDate);
-      }
-    )
-});
+export const reportedPostsQuerySchema = yup
+  .object({
+    interval: yup
+      .string()
+      .oneOf(['daily', 'weekly', 'monthly'], 'Invalid interval. Must be daily, weekly, or monthly')
+      .default('daily'),
+    startDate: createDateField('startDate', 30).required('startDate is required'),
+    endDate: createDateField('endDate').required('endDate is required'),
+  })
+  .test('date-range', 'startDate must be before or equal to endDate', function (value) {
+    const { startDate, endDate } = value;
+    if (!startDate || !endDate) return true; // let required rules handle it
+    return new Date(startDate) <= new Date(endDate);
+  });

@@ -14,10 +14,19 @@ export const getReportedPostsController = async (
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
-    const { interval, startDate, endDate } = await reportedPostsQuerySchema.validate(req.query, { abortEarly: false });
+
+    // Validate and get default values from schema
+    const validatedData = await reportedPostsQuerySchema.validate(req.query, { 
+      abortEarly: false,
+      stripUnknown: true
+    });
     
-    // Pass validated parameters directly to the service, let the service handle its own defaults if needed
-    const data = await reportedPostsService.getReportedMetrics(interval, startDate!, endDate!);
+    const data = await reportedPostsService.getReportedMetrics(
+      validatedData.interval,
+      validatedData.startDate,
+      validatedData.endDate
+    );
+    
     res.json(data);
   } catch (err) {
     next(err);
