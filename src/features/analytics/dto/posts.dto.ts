@@ -1,4 +1,3 @@
-// src/dto/posts.dto.ts
 import * as yup from 'yup';
 
 export interface TopPostsQuery {
@@ -8,12 +7,11 @@ export interface TopPostsQuery {
   limit?: number;
 }
 
-// Nueva interfaz para los detalles completos del post
 export interface PostDetail {
   id: string;
   userId: string;
   content: string | null;
-  createdAt: string; // Usaremos string para la fecha formateada
+  createdAt: string; 
   updatedAt: string | null;
   fileUrl: string | null;
   fileSize: number | null;
@@ -24,7 +22,6 @@ export interface PostDetail {
   commentCount: number;
 }
 
-// Interfaz TopPostMetric ahora usa PostDetail
 export interface TopPostMetric {
   date: string;
   posts: PostDetail[];
