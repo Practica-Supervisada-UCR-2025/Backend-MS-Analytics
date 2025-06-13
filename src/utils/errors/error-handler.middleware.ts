@@ -8,7 +8,10 @@ export const errorHandler: ErrorRequestHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.error('Error:', error);
+  // Only log errors in non-test environment
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Error:', error);
+  }
 
   // Handle Yup validation errors
   if (error instanceof ValidationError) {
