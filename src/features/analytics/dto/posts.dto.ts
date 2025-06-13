@@ -27,46 +27,23 @@ export interface TopPostMetric {
   posts: PostDetail[];
 }
 
-export const topPostsQuerySchema = yup.object({
+const createDateField = (fieldName: string) =>
+  yup
+    .string()
+    .transform((value) => {
+      if (!value) return value;
+      return value.split('T')[0];
+    })
+    .matches(/^\d{4}-\d{2}-\d{2}$/, `Invalid ${fieldName} format. Use YYYY-MM-DD`)
+    .required(`${fieldName} is required`);
+
+const baseSchema = yup.object({
   range: yup
     .string()
     .oneOf(['daily', 'weekly', 'monthly'], 'Invalid range. Must be daily, weekly, or monthly')
     .default('daily'),
 
-  startDate: yup
-    .string()
-    .transform((value) => {
-      if (value) {
-        const trimmedValue = value.trim();
-        return trimmedValue.split('T')[0];
-      }
-      const defaultDate = new Date();
-      defaultDate.setDate(defaultDate.getDate() - 30);
-      return defaultDate.toISOString().split('T')[0];
-    })
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid startDate format. Use YYYY-MM-DD')
-    .required('startDate is required'),
-
-  endDate: yup
-    .string()
-    .transform((value) => {
-      if (value) {
-        const trimmedValue = value.trim();
-        return trimmedValue.split('T')[0];
-      }
-      return new Date().toISOString().split('T')[0];
-    })
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid endDate format. Use YYYY-MM-DD')
-    .required('endDate is required')
-    .test(
-      'date-range',
-      'startDate must be before or equal to endDate',
-      function (endDate) {
-        const { startDate } = this.parent;
-        if (!startDate || !endDate) return true;
-        return new Date(startDate) <= new Date(endDate);
-      }
-    ),
+  startDate: createDateField('startDate'),
 
   limit: yup
     .number()
@@ -76,3 +53,18 @@ export const topPostsQuerySchema = yup.object({
     .default(3)
     .optional(),
 });
+
+export const topPostsQuerySchema = baseSchema.concat(
+  yup.object({
+    endDate: createDateField('endDate')
+      .test(
+        'date-range',
+        'startDate must be before or equal to endDate',
+        function (endDate) {
+          const { startDate } = this.parent;
+          if (!startDate || !endDate) return true;
+          return new Date(startDate) <= new Date(endDate);
+        }
+      )
+  })
+);
