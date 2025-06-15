@@ -121,4 +121,118 @@ describe('UserAnalyticsService', () => {
       ]);
     });
   });
+
+  describe('getUserGrowthStatsNonCumulative', () => {
+    const mockQuery = {
+      startDate: '2023-01-01',
+      endDate: '2023-01-03',
+      interval: 'daily' as const
+    };
+
+    const mockGrowthData: DataPoint[] = [
+      { date: '2023-01-01', count: 5 },
+      { date: '2023-01-03', count: 3 }
+    ];
+
+    beforeEach(() => {
+      mockRepository.getTotalUsers = jest.fn().mockResolvedValue(100);
+      mockRepository.getTotalActiveUsers = jest.fn().mockResolvedValue(50);
+      mockRepository.getUserGrowthData = jest.fn().mockResolvedValue(mockGrowthData);
+    });
+
+    it('should return non-cumulative daily growth stats with all dates filled', async () => {
+      const result = await service.getUserGrowthStatsNonCumulative(mockQuery);
+
+      // The service should not generate cumulative totals
+      expect(result).toEqual({
+        series: [
+          { date: '2023-01-01', count: 5 },
+          { date: '2023-01-02', count: 0 },
+          { date: '2023-01-03', count: 3 }
+        ],
+        totalUsers: 100,
+        totalActiveUsers: 50,
+        aggregatedByInterval: 'daily'
+      });
+
+      expect(mockRepository.getTotalUsers).toHaveBeenCalled();
+      expect(mockRepository.getTotalActiveUsers).toHaveBeenCalled();
+      expect(mockRepository.getUserGrowthData).toHaveBeenCalledWith(mockQuery);
+    });
+
+    it('should handle monthly interval correctly', async () => {
+      const monthlyQuery = {
+        startDate: '2023-01-01',
+        endDate: '2023-03-31',
+        interval: 'monthly' as const
+      };
+
+      const monthlyData: DataPoint[] = [
+        { date: '2023-01', count: 10 },
+        { date: '2023-02', count: 15 },
+        { date: '2023-03', count: 20 }
+      ];
+
+      mockRepository.getUserGrowthData.mockResolvedValue(monthlyData);
+
+      const result = await service.getUserGrowthStatsNonCumulative(monthlyQuery);
+
+      // Verify counts are not cumulative
+      expect(result.series).toEqual([
+        { date: '2023-01', count: 10 },
+        { date: '2023-02', count: 15 },
+        { date: '2023-03', count: 20 }
+      ]);
+      expect(result.aggregatedByInterval).toBe('monthly');
+    });
+
+    it('should use daily interval when specified', async () => {
+      const query = {
+        startDate: '2023-01-01',
+        endDate: '2023-01-03',
+        interval: 'daily' as const
+      };
+
+      const result = await service.getUserGrowthStatsNonCumulative(query);
+
+      expect(result.aggregatedByInterval).toBe('daily');
+      expect(mockRepository.getUserGrowthData).toHaveBeenCalledWith(query);
+    });
+
+    it('should handle repository errors correctly', async () => {
+      const error = new Error('Database error');
+      mockRepository.getUserGrowthData.mockRejectedValue(error);
+
+      await expect(service.getUserGrowthStatsNonCumulative(mockQuery))
+        .rejects
+        .toThrow(InternalServerError);
+    });
+
+    it('should handle empty data sets', async () => {
+      mockRepository.getUserGrowthData.mockResolvedValue([]);
+
+      const result = await service.getUserGrowthStatsNonCumulative(mockQuery);
+
+      expect(result.series).toEqual([
+        { date: '2023-01-01', count: 0 },
+        { date: '2023-01-02', count: 0 },
+        { date: '2023-01-03', count: 0 }
+      ]);
+    });
+
+    it('should handle missing interval by defaulting to daily', async () => {
+      const queryWithoutInterval = {
+        startDate: '2023-01-01',
+        endDate: '2023-01-03'
+      };
+
+      const result = await service.getUserGrowthStatsNonCumulative(queryWithoutInterval as any);
+
+      expect(result.aggregatedByInterval).toBe('daily');
+      expect(mockRepository.getUserGrowthData).toHaveBeenCalledWith({
+        ...queryWithoutInterval,
+        interval: 'daily'
+      });
+    });
+  });
 });
