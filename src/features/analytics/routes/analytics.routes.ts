@@ -25,5 +25,10 @@ router.get(
 // Get total posts stats grouped by period (protected by JWT)
 router.get('/posts/stats/total', authenticateJWT, getTotalPostsStatsController as RequestHandler);
 
+router.get(
+  '/users-stats/growth/non-cumulative',
+  authenticateJWT,
+  userAnalyticsController.getUserGrowthStatsNonCumulative.bind(userAnalyticsController)
+);
 
 export default router;
