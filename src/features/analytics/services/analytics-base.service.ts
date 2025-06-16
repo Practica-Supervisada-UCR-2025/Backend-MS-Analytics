@@ -114,7 +114,10 @@ export abstract class AnalyticsBaseService {
    * Handles common errors for analytics services
    */
   protected handleServiceError(error: any, serviceName: string): never {
-    console.error(`Error in ${serviceName}:`, error);
+    // Only log errors in non-test environment
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`Error in ${serviceName}:`, error);
+    }
     throw new InternalServerError(`Failed to retrieve ${serviceName}`);
   }
 }
