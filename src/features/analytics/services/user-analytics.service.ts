@@ -50,4 +50,36 @@ export class UserAnalyticsService extends AnalyticsBaseService {
       this.handleServiceError(error, 'user growth statistics');
     }
   }
+
+  async getUserGrowthStatsNonCumulative(query: UserGrowthQueryDto): Promise<UserGrowthResponse> {
+    try {
+      // Get totals
+      const [totalUsers, totalActiveUsers] = await Promise.all([
+        this.repository.getTotalUsers(),
+        this.repository.getTotalActiveUsers()
+      ]);
+      
+      // Get growth data
+      const growthData = await this.repository.getUserGrowthData({
+        startDate: query.startDate!,
+        endDate: query.endDate!,
+        interval: query.interval || 'daily'
+      });
+      
+      const series = this.generateCompleteSeries(growthData, {
+        startDate: query.startDate!,
+        endDate: query.endDate!,
+        interval: query.interval || 'daily'
+      }, false); 
+      
+      return {
+        series,
+        totalUsers,
+        totalActiveUsers,
+        aggregatedByInterval: query.interval || 'daily'
+      };
+    } catch (error) {
+      this.handleServiceError(error, 'user growth statistics');
+    }
+  }
 }
