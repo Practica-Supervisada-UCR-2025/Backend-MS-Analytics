@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../users/services/jwt.service';
 import { UnauthorizedError } from '../../utils/errors/api-error';
 
+export interface AuthenticatedUser {
+  email: string;
+  role: string;
+  uuid: string;
+}
+
 export interface AuthenticatedRequest extends Request {
-  user: {
-    email: string;
-    role: string;
-    uuid: string;
-  };
+  user: AuthenticatedUser;
 }
 
 export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
