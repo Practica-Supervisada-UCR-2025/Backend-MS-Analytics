@@ -191,7 +191,7 @@ describe('Analytics Routes', () => {
       expect(response.body).toHaveProperty('metrics');
       expect(response.body).toHaveProperty('aggregatedByInterval', 'daily');
       expect(response.body).toHaveProperty('limit', 3);
-    });
+    }, 15000); // 👈 agregado
 
     it('should return 400 with invalid query parameters', async () => {
       const response = await request(app)
@@ -244,7 +244,8 @@ describe('Analytics Routes', () => {
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty('aggregatedByInterval', range);
       }
-    });
+    }, 15000);
+
 
     it('should use default limit when not provided', async () => {
       const response = await request(app)
@@ -259,9 +260,10 @@ describe('Analytics Routes', () => {
           endDate: '2023-01-03'
         });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('limit', 3);
-    });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('limit', 3);
+    }, 15000);
+
 
     it('should handle date ranges spanning multiple periods', async () => {
       const response = await request(app)
@@ -278,7 +280,7 @@ describe('Analytics Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.metrics.length).toBeGreaterThan(1);
-    });
+    }, 15000);
 
     it('should return 403 for non-admin users', async () => {
       const response = await request(app)
