@@ -1,24 +1,20 @@
 import { StatsQueryDTO } from '../dto/postStats.dto';
 import { getPostCountsByPeriod } from '../repositories/postStats.repository';
 
-interface PostStatsEntry {
-  label: string;
+interface AnalyticsDataPoint {
+  date: string;
   count: number;
 }
 
 interface PostStatsResponse {
-  range: 'daily' | 'weekly' | 'monthly';
-  total: number;
-  data: PostStatsEntry[];
+  message: string;
+  data: {
+    series: AnalyticsDataPoint[];
+    total: number;
+  };
 }
 
 const extractSortableDate = (label: string, period: string): Date => {
-  if (period === 'weekly') {
-    const [start] = label.split(' al ');
-    const [day, month, year] = start.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  }
-
   if (period === 'daily') {
     const [day, month, year] = label.split('-').map(Number);
     return new Date(year, month - 1, day);
@@ -29,7 +25,8 @@ const extractSortableDate = (label: string, period: string): Date => {
     return new Date(year, month - 1, 1);
   }
 
-  return new Date(0); // fallback
+  // weekly: "YYYY-Www" — sortable as string
+  return new Date(0);
 };
 
 export const getTotalPostsStatsService = async (
@@ -42,14 +39,24 @@ export const getTotalPostsStatsService = async (
   const total = data.reduce((sum, entry) => sum + entry.count, 0);
 
   const sorted = data.sort((a, b) => {
+    if (period === 'weekly') {
+      return a.label.localeCompare(b.label);
+    }
     const aDate = extractSortableDate(a.label, period);
     const bDate = extractSortableDate(b.label, period);
     return aDate.getTime() - bDate.getTime();
   });
 
+  const series = sorted.map(entry => ({
+    date: entry.label,
+    count: entry.count,
+  }));
+
   return {
-    range: period,
-    total,
-    data: sorted,
+    message: 'Analytics data fetched successfully',
+    data: {
+      series,
+      total,
+    },
   };
 };

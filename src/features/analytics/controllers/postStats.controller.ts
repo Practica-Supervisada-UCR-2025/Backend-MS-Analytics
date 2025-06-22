@@ -31,10 +31,7 @@ export const getTotalPostsStatsController = async (
 
     const result = await getTotalPostsStatsService(transformedQuery);
 
-    return res.status(200).json({
-      status: 'success',
-      data: result,
-    });
+    return res.status(200).json(result); 
   } catch (err) {
     next(err);
   }
