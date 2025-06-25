@@ -66,11 +66,11 @@ describe('Posts Service', () => {
     });
 
     it('should return top posts with weekly aggregation', async () => {
-      // Mock the repository to return data with the correct period key: 'Week X-YYYY'
+      // Mock the repository to return data with the correct period key: '2023-W01'
       // '2023-01-02' (Monday, Jan 2, 2023) falls into ISO Week 1 of 2023.
       (getTopInteractedPostsMetrics as jest.Mock).mockResolvedValue([
         {
-          date: 'Week 1-2023', // Corrected format for weekly period key
+          date: '2023-W01', // Correct format that the repository returns
           posts: [mockPostDetail]
         }
       ]);
@@ -86,7 +86,7 @@ describe('Posts Service', () => {
       expect(result.aggregatedByInterval).toBe('weekly');
       expect(result.limit).toBe(3);
       expect(result.metrics.length).toBeGreaterThan(0);
-      expect(result.metrics[0].date).toMatch(/^Week \d+-\d{4} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.metrics[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
       expect(result.metrics[0].posts).toEqual([mockPostDetail]);
     });
 
@@ -163,8 +163,8 @@ describe('Posts Service', () => {
     it('should handle date ranges spanning multiple periods', async () => {
       // Mock with the expected periodKey format for weekly
       (getTopInteractedPostsMetrics as jest.Mock).mockResolvedValue([
-        { date: 'Week 1-2023', posts: [mockPostDetail] }, // First week of 2023
-        { date: 'Week 2-2023', posts: [mockPostDetail] }  // Second week of 2023
+        { date: '2023-W01', posts: [mockPostDetail] }, // First week of 2023
+        { date: '2023-W02', posts: [mockPostDetail] }  // Second week of 2023
       ]);
 
       const result = await service.getTopInteractedPosts({
@@ -182,7 +182,7 @@ describe('Posts Service', () => {
     it('should format weekly dates correctly', async () => {
         // Mock with the expected periodKey for weekly
       (getTopInteractedPostsMetrics as jest.Mock).mockResolvedValue([
-        { date: 'Week 1-2023', posts: [mockPostDetail] } // Monday
+        { date: '2023-W01', posts: [mockPostDetail] } // Monday
       ]);
 
       const result = await service.getTopInteractedPosts({
@@ -192,7 +192,7 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.metrics[0].date).toMatch(/^Week \d+-\d{4} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.metrics[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
     });
 
     it('should format monthly dates correctly', async () => {

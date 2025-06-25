@@ -45,56 +45,38 @@ export class PostsService extends AnalyticsBaseService {
     const dataMap = new Map<string, PostDetail[]>();
     dataFromDb.forEach(item => dataMap.set(item.date, item.posts));
 
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-
     while (currentDate <= end) {
       let periodKey: string;
-      let displayDate: string;
 
       switch (interval) {
         case 'daily':
           periodKey = currentDate.toISOString().split('T')[0];
-          displayDate = periodKey;
           currentDate.setUTCDate(currentDate.getUTCDate() + 1);
           break;
         case 'weekly':
           const startOfWeek = new Date(currentDate);
           startOfWeek.setUTCDate(currentDate.getUTCDate() - (currentDate.getUTCDay() === 0 ? 6 : currentDate.getUTCDay() - 1));
 
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
-
           const isoWeekNo = this.getISOWeekNumber(startOfWeek);
-          periodKey = `Week ${isoWeekNo}-${startOfWeek.getUTCFullYear()}`;
-          
-          const formattedStartDateWeekly = startOfWeek.toLocaleDateString('en-CA', options);
-          const formattedEndDateWeekly = endOfWeek.toLocaleDateString('en-CA', options);
-          displayDate = `${periodKey} (${formattedStartDateWeekly} to ${formattedEndDateWeekly})`;
+          periodKey = `${startOfWeek.getUTCFullYear()}-W${isoWeekNo.toString().padStart(2, '0')}`;
 
           currentDate.setUTCDate(currentDate.getUTCDate() + 7);
           break;
         case 'monthly':
-          const startOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), 1));
-          const endOfMonth = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + 1, 0));
-
           periodKey = `${currentDate.getUTCFullYear()}-${(currentDate.getUTCMonth() + 1).toString().padStart(2, '0')}`;
-
-          const formattedStartMonthMonthly = startOfMonth.toLocaleDateString('en-CA', options);
-          const formattedEndMonthMonthly = endOfMonth.toLocaleDateString('en-CA', options);
-          displayDate = `${periodKey} (${formattedStartMonthMonthly} to ${formattedEndMonthMonthly})`;
 
           currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
           currentDate.setUTCDate(1);
           break;
         default:
           periodKey = currentDate.toISOString().split('T')[0];
-          displayDate = periodKey;
           currentDate.setUTCDate(currentDate.getUTCDate() + 1);
           break;
       }
 
       const postsForDate = dataMap.get(periodKey) || [];
-      completeSeries.push({ date: displayDate, posts: postsForDate });
+      const formattedDate = this.formatDate(periodKey, interval);
+      completeSeries.push({ date: formattedDate, posts: postsForDate });
     }
 
     return completeSeries;

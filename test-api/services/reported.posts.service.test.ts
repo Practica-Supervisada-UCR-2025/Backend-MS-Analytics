@@ -28,7 +28,7 @@ describe('ReportedPostsService', () => {
       (reportedPostsRepository.getReportedPostsMetrics as jest.Mock).mockResolvedValue(mockMetrics);
       (reportedPostsRepository.getTotalReportedPosts as jest.Mock).mockResolvedValue(mockTotal);
 
-      const result = await service.getReportedMetrics('daily', mockDate, mockEndDate);
+      const result = await service.getReportedMetrics(mockDate, mockEndDate, 'daily');
 
       // Verify the structure of the response
       expect(result).toMatchObject({
@@ -67,7 +67,7 @@ describe('ReportedPostsService', () => {
       (reportedPostsRepository.getReportedPostsMetrics as jest.Mock).mockResolvedValue(mockMetrics);
       (reportedPostsRepository.getTotalReportedPosts as jest.Mock).mockResolvedValue(mockTotal);
 
-      await service.getReportedMetrics('daily', '', '');
+      await service.getReportedMetrics('', '', 'daily');
 
       expect(reportedPostsRepository.getReportedPostsMetrics).toHaveBeenCalledWith(
         'daily',
@@ -82,14 +82,14 @@ describe('ReportedPostsService', () => {
 
     it('should handle weekly aggregation', async () => {
       const weeklyMetrics = [
-        { date: 'Week 01 2023', count: 10 },
-        { date: 'Week 02 2023', count: 15 }
+        { date: '2023-W01 (2022-12-26 to 2023-01-01)', count: 10 },
+        { date: '2023-W02 (2023-01-02 to 2023-01-08)', count: 15 }
       ];
 
       (reportedPostsRepository.getReportedPostsMetrics as jest.Mock).mockResolvedValue(weeklyMetrics);
       (reportedPostsRepository.getTotalReportedPosts as jest.Mock).mockResolvedValue(mockTotal);
 
-      const result = await service.getReportedMetrics('weekly', mockDate, mockEndDate);
+      const result = await service.getReportedMetrics(mockDate, mockEndDate, 'weekly');
 
       expect(result).toMatchObject({
         total: mockTotal,
@@ -98,22 +98,22 @@ describe('ReportedPostsService', () => {
 
       expect(result.metrics).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ date: 'Week 01 2023', count: 10 }),
-          expect.objectContaining({ date: 'Week 02 2023', count: 15 })
+          expect.objectContaining({ date: '2023-W01 (2022-12-26 to 2023-01-01)', count: 10 }),
+          expect.objectContaining({ date: '2023-W02 (2023-01-02 to 2023-01-08)', count: 15 })
         ])
       );
     });
 
     it('should handle monthly aggregation', async () => {
       const monthlyMetrics = [
-        { date: '2023-01', count: 30 },
-        { date: '2023-02', count: 40 }
+        { date: '2023-01 (2023-01-01 to 2023-01-31)', count: 30 },
+        { date: '2023-02 (2023-02-01 to 2023-02-28)', count: 40 }
       ];
 
       (reportedPostsRepository.getReportedPostsMetrics as jest.Mock).mockResolvedValue(monthlyMetrics);
       (reportedPostsRepository.getTotalReportedPosts as jest.Mock).mockResolvedValue(mockTotal);
 
-      const result = await service.getReportedMetrics('monthly', mockDate, mockEndDate);
+      const result = await service.getReportedMetrics(mockDate, mockEndDate, 'monthly');
 
       expect(result).toMatchObject({
         total: mockTotal,
@@ -122,8 +122,8 @@ describe('ReportedPostsService', () => {
 
       expect(result.metrics).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ date: '2023-01', count: 30 }),
-          expect.objectContaining({ date: '2023-02', count: 40 })
+          expect.objectContaining({ date: '2023-01 (2023-01-01 to 2023-01-31)', count: 30 }),
+          expect.objectContaining({ date: '2023-02 (2023-02-01 to 2023-02-28)', count: 40 })
         ])
       );
     });
@@ -132,7 +132,7 @@ describe('ReportedPostsService', () => {
       const error = new InternalServerError('Failed to retrieve reported posts metrics');
       (reportedPostsRepository.getReportedPostsMetrics as jest.Mock).mockRejectedValue(error);
 
-      await expect(service.getReportedMetrics('daily', mockDate, mockEndDate))
+      await expect(service.getReportedMetrics(mockDate, mockEndDate, 'daily'))
         .rejects
         .toThrow(InternalServerError);
     });

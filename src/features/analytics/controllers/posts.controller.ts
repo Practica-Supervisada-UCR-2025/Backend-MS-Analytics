@@ -1,8 +1,8 @@
 // src/controllers/posts.controller.ts
 import { NextFunction, Request, Response } from 'express';
-import { topPostsQuerySchema, TopPostsQuery } from '../dto/posts.dto';
+import { validateUserGrowthQuery } from '../dto/user-growth-query.dto';
 import { PostsService } from '../services/posts.service';
-import { AuthenticatedRequest } from '../../middleware/authenticate.middleware'; // Ajusta la ruta a tu middleware
+import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
 
 const postsService = new PostsService();
 
@@ -12,30 +12,40 @@ export const getTopInteractedPostsController = async (
   next: NextFunction
 ) => {
   try {
-    // RF24, RF25, RF26: Solo administradores
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied: Only administrators can view this metric.' });
+      return res.status(403).json({
+        message: 'Only admins can access analytics'
+      });
     }
 
-    // Validar los parámetros de la consulta usando el esquema Yup
-    const queryParams: TopPostsQuery = await topPostsQuerySchema.validate(req.query, { abortEarly: false });
+    // Validate and parse query parameters using the same DTO as user growth
+    const queryParams = await validateUserGrowthQuery(req.query);
 
-    // Llamar al servicio para obtener los datos
-    const data = await postsService.getTopInteractedPosts(queryParams);
+    // Get limit from query if provided, otherwise use default
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 3;
 
-    // RNF3: Tiempo de respuesta (ya manejado implícitamente si la DB es rápida)
-    // RNF18: La interfaz la maneja el frontend, aquí solo devolvemos los datos.
+    // Call service with the validated parameters
+    const data = await postsService.getTopInteractedPosts({
+      range: queryParams.interval,
+      startDate: queryParams.startDate!,
+      endDate: queryParams.endDate!,
+      limit: limit
+    });
 
-    res.status(200).json(data);
+    // Return the response in the same format as user growth endpoint
+    res.status(200).json({
+      message: 'Top interacted posts statistics retrieved successfully',
+      data: data
+    });
   } catch (err: any) {
-    // Manejo de errores de validación de Yup
+    // Handle Yup validation errors
     if (err.name === 'ValidationError') {
       return res.status(400).json({
         message: 'Validation Error',
         details: err.errors,
       });
     }
-    // Otros errores del servidor
-    next(err); // Pasa el error al siguiente middleware de manejo de errores
+    // Other server errors
+    next(err);
   }
 };

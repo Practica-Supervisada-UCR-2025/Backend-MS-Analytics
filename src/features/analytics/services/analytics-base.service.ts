@@ -15,6 +15,87 @@ export interface TimeRangeQuery {
 // Abstract base class for analytics services
 export abstract class AnalyticsBaseService {
   /**
+   * Formats dates uniformly across all services
+   */
+  protected formatDate(date: string, interval: 'daily' | 'weekly' | 'monthly'): string {
+    if (interval === 'daily') {
+      return date; // Already in YYYY-MM-DD format
+    }
+    
+    if (interval === 'monthly') {
+      // Check if date is already in the uniform format
+      if (date.includes(' to ')) {
+        return date; // Already formatted
+      }
+      
+      // date is in YYYY-MM format, convert to YYYY-MM (start date to end date)
+      const [year, month] = date.split('-');
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of month
+      
+      const startStr = startDate.toISOString().split('T')[0];
+      const endStr = endDate.toISOString().split('T')[0];
+      
+      return `${date} (${startStr} to ${endStr})`;
+    }
+    
+    if (interval === 'weekly') {
+      // Check if date is already in the uniform format
+      if (date.includes(' to ')) {
+        return date; // Already formatted
+      }
+      
+      // Parse the week format and convert to uniform format
+      // Handle different input formats: "Week 19-2025", "Week 19 2025", "2025-W19"
+      let weekNumber: number;
+      let year: number;
+      
+      if (date.includes('Week')) {
+        // Format: "Week 19-2025" or "Week 19 2025"
+        const match = date.match(/Week\s+(\d+)[-\s](\d{4})/);
+        if (match) {
+          weekNumber = parseInt(match[1]);
+          year = parseInt(match[2]);
+        } else {
+          return date; // Return as is if can't parse
+        }
+      } else if (date.includes('-W')) {
+        // Format: "2025-W19"
+        const match = date.match(/(\d{4})-W(\d+)/);
+        if (match) {
+          year = parseInt(match[1]);
+          weekNumber = parseInt(match[2]);
+        } else {
+          return date; // Return as is if can't parse
+        }
+      } else {
+        return date; // Return as is if can't parse
+      }
+      
+      // Calculate start and end dates of the week
+      const startOfYear = new Date(year, 0, 1);
+      const daysToAdd = (weekNumber - 1) * 7;
+      const startOfWeek = new Date(startOfYear);
+      startOfWeek.setDate(startOfYear.getDate() + daysToAdd);
+      
+      // Adjust to Monday (ISO week starts on Monday)
+      const dayOfWeek = startOfWeek.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      
+      const startStr = startOfWeek.toISOString().split('T')[0];
+      const endStr = endOfWeek.toISOString().split('T')[0];
+      
+      return `${year}-W${weekNumber.toString().padStart(2, '0')} (${startStr} to ${endStr})`;
+    }
+    
+    return date; // Fallback
+  }
+
+  /**
    * Generates a complete data series with all points for the given interval
    */
   protected generateCompleteSeries(
@@ -22,9 +103,15 @@ export abstract class AnalyticsBaseService {
     query: TimeRangeQuery,
     cumulative: boolean = false
   ): DataPoint[] {
-    return query.interval === 'daily' 
+    const series = query.interval === 'daily' 
       ? this.generateDailySeries(data, query.startDate, query.endDate, cumulative)
       : this.generateIntervalSeries(data, cumulative);
+    
+    // Format dates uniformly
+    return series.map(item => ({
+      ...item,
+      date: this.formatDate(item.date, query.interval)
+    }));
   }
   
   /**

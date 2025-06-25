@@ -66,7 +66,7 @@ describe('Posts Repository', () => {
       expect(result).toEqual(mockQueryResult.rows);
       expect(client.query).toHaveBeenCalledWith(
         expect.any(String),
-        ['week', '2023-01-01', '2023-01-31', '"Week "IW-YYYY', '1 week', 3]
+        ['week', '2023-01-01', '2023-01-31', 'IYYY-"W"IW', '1 week', 3]
       );
     });
 

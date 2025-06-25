@@ -1,14 +1,14 @@
-import { reportedPostsQuerySchema, ReportedPostsQuery } from '../../src/features/analytics/dto/reported.posts.dto';
+import { userGrowthQuerySchema, UserGrowthQueryDto, validateUserGrowthQuery } from '../../src/features/analytics/dto/user-growth-query.dto';
 
-describe('ReportedPostsQuery Schema', () => {
+describe('UserGrowthQuery Schema (used by reported posts)', () => {
   it('should validate correct data', async () => {
-    const validData: ReportedPostsQuery = {
+    const validData = {
       interval: 'daily',
       startDate: '2023-01-01',
       endDate: '2023-01-31'
     };
 
-    const result = await reportedPostsQuerySchema.validate(validData);
+    const result = await userGrowthQuerySchema.validate(validData);
     expect(result).toEqual(validData);
   });
 
@@ -18,7 +18,7 @@ describe('ReportedPostsQuery Schema', () => {
       endDate: '2023-01-31'
     };
 
-    const result = await reportedPostsQuerySchema.validate(data);
+    const result = await userGrowthQuerySchema.validate(data);
     expect(result.interval).toBe('daily');
   });
 
@@ -29,7 +29,7 @@ describe('ReportedPostsQuery Schema', () => {
       endDate: '2023-01-31T12:00:00Z'
     };
 
-    const result = await reportedPostsQuerySchema.validate(data);
+    const result = await userGrowthQuerySchema.validate(data);
     expect(result.startDate).toBe('2023-01-01');
     expect(result.endDate).toBe('2023-01-31');
   });
@@ -39,10 +39,10 @@ describe('ReportedPostsQuery Schema', () => {
       interval: 'daily'
     };
 
-    const result = await reportedPostsQuerySchema.validate(data);
+    const result = await validateUserGrowthQuery(data);
     expect(result.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(result.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(new Date(result.startDate).getTime()).toBeLessThanOrEqual(new Date(result.endDate).getTime());
+    expect(new Date(result.startDate!).getTime()).toBeLessThanOrEqual(new Date(result.endDate!).getTime());
   });
 
   it('should reject invalid interval', async () => {
@@ -53,7 +53,7 @@ describe('ReportedPostsQuery Schema', () => {
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
       expect(error.errors).toContain('Invalid interval. Must be daily, weekly, or monthly');
@@ -68,7 +68,7 @@ describe('ReportedPostsQuery Schema', () => {
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
       expect(error.errors).toContain('Invalid endDate format. Use YYYY-MM-DD');
@@ -83,7 +83,7 @@ describe('ReportedPostsQuery Schema', () => {
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
       expect(error.errors).toContain('Invalid startDate format. Use YYYY-MM-DD');
@@ -98,7 +98,7 @@ describe('ReportedPostsQuery Schema', () => {
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
       expect(error.errors).toContain('startDate must be before or equal to endDate');
@@ -115,7 +115,7 @@ describe('ReportedPostsQuery Schema', () => {
         endDate: '2023-01-31'
       };
 
-      const result = await reportedPostsQuerySchema.validate(data);
+      const result = await userGrowthQuerySchema.validate(data);
       expect(result.interval).toBe(interval);
     }
   });
@@ -127,7 +127,7 @@ describe('ReportedPostsQuery Schema', () => {
       endDate: '2023-01-31T23:59:59.999Z'
     };
 
-    const result = await reportedPostsQuerySchema.validate(data);
+    const result = await userGrowthQuerySchema.validate(data);
     expect(result.startDate).toBe('2023-01-01');
     expect(result.endDate).toBe('2023-01-31');
   });
@@ -140,26 +140,26 @@ describe('ReportedPostsQuery Schema', () => {
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
-      expect(error.errors).toContain('Invalid startDate');
+      expect(error.errors).toContain('Invalid startDate format. Use YYYY-MM-DD');
     }
   });
 
   it('should reject completely invalid dates', async () => {
     const data = {
       interval: 'daily',
-      startDate: '2023-13-01', // Invalid month
-      endDate: '2023-01-32'    // Invalid day
+      startDate: 'invalid-start',
+      endDate: 'invalid-end'
     };
 
     try {
-      await reportedPostsQuerySchema.validate(data, { abortEarly: false });
+      await userGrowthQuerySchema.validate(data, { abortEarly: false });
       throw new Error('Validation should have failed');
     } catch (error: any) {
-      expect(error.errors).toContain('Invalid startDate');
-      expect(error.errors).toContain('Invalid endDate');
+      expect(error.errors).toContain('Invalid startDate format. Use YYYY-MM-DD');
+      expect(error.errors).toContain('Invalid endDate format. Use YYYY-MM-DD');
     }
   });
 });

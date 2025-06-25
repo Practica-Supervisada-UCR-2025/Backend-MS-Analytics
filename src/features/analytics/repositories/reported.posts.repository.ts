@@ -16,7 +16,7 @@ export const getReportedPostsMetrics = async (
       case 'weekly':
         dateTrunc = 'week';
         interval = '1 week';
-        format = '"Week "IW YYYY'; // ISO week number + year
+        format = 'IYYY-"W"IW'; // ISO week format: 2025-W19
         break;
       case 'monthly':
         dateTrunc = 'month';
