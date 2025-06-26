@@ -67,7 +67,7 @@ describe('Analytics Routes', () => {
         message: 'Reported posts statistics retrieved successfully',
         data: {
           aggregatedByInterval: 'daily',
-          metrics: [
+          series: [
             {
               count: 5,
               date: '2023-01-01',
@@ -218,7 +218,7 @@ describe('Analytics Routes', () => {
         data: {
           aggregatedByInterval: 'daily',
           limit: 3,
-          metrics: [
+          series: [
             { date: '2023-01-01', posts: [] },
             { date: '2023-01-02', posts: [] },
             { date: '2023-01-03', posts: [] }
@@ -305,7 +305,7 @@ describe('Analytics Routes', () => {
           data: {
             aggregatedByInterval: range,
             limit: 3,
-            metrics: [
+            series: [
               { date: '2023-01-01', posts: [] },
               { date: '2023-01-02', posts: [] },
               { date: '2023-01-03', posts: [] }
@@ -340,7 +340,7 @@ describe('Analytics Routes', () => {
         data: {
           aggregatedByInterval: 'daily',
           limit: 3,
-          metrics: [
+          series: [
             { date: '2023-01-01', posts: [] },
             { date: '2023-01-02', posts: [] },
             { date: '2023-01-03', posts: [] }
@@ -374,7 +374,7 @@ describe('Analytics Routes', () => {
         data: {
           aggregatedByInterval: 'weekly',
           limit: 3,
-          metrics: [
+          series: [
             { date: '2023-W01 (2022-12-26 to 2023-01-01)', posts: [] },
             { date: '2023-W02 (2023-01-02 to 2023-01-08)', posts: [] },
             { date: '2023-W03 (2023-01-09 to 2023-01-15)', posts: [] }

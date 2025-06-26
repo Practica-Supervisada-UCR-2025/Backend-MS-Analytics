@@ -31,7 +31,7 @@ describe('ReportedPostsController', () => {
   describe('getReportedPostsController', () => {
     const mockServiceData = {
       aggregatedByInterval: 'daily',
-      metrics: [
+      series: [
         {
           count: 5,
           date: '2023-01-01',

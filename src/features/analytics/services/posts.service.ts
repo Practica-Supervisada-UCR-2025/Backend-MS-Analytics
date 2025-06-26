@@ -3,7 +3,7 @@ import { TopPostsQuery } from '../dto/posts.dto';
 import { AnalyticsBaseService, TimeRangeQuery } from './analytics-base.service';
 
 export interface TopInteractedPostsResponse {
-  metrics: { date: string, posts: PostDetail[] }[];
+  series: { date: string, posts: PostDetail[] }[];
   aggregatedByInterval: 'daily' | 'weekly' | 'monthly';
   limit: number;
 }
@@ -23,7 +23,7 @@ export class PostsService extends AnalyticsBaseService {
     const completeSeries: { date: string, posts: PostDetail[] }[] = this.generateCompleteSeriesForTopPosts(rawMetrics, timeRangeQuery);
 
     return {
-      metrics: completeSeries,
+      series: completeSeries,
       aggregatedByInterval: range,
       limit: limit,
     };

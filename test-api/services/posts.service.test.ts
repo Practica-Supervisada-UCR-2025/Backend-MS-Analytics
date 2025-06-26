@@ -48,7 +48,7 @@ describe('Posts Service', () => {
       });
 
       expect(result).toEqual({
-        metrics: [
+        series: [
           { date: '2023-01-01', posts: [mockPostDetail] },
           { date: '2023-01-02', posts: [] },
           { date: '2023-01-03', posts: [] }
@@ -85,9 +85,9 @@ describe('Posts Service', () => {
       // Verify the response structure
       expect(result.aggregatedByInterval).toBe('weekly');
       expect(result.limit).toBe(3);
-      expect(result.metrics.length).toBeGreaterThan(0);
-      expect(result.metrics[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
-      expect(result.metrics[0].posts).toEqual([mockPostDetail]);
+      expect(result.series.length).toBeGreaterThan(0);
+      expect(result.series[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].posts).toEqual([mockPostDetail]);
     });
 
     it('should return top posts with monthly aggregation', async () => {
@@ -109,9 +109,9 @@ describe('Posts Service', () => {
       // Verify the response structure
       expect(result.aggregatedByInterval).toBe('monthly');
       expect(result.limit).toBe(3);
-      expect(result.metrics.length).toBeGreaterThan(0);
-      expect(result.metrics[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
-      expect(result.metrics[0].posts).toEqual([mockPostDetail]);
+      expect(result.series.length).toBeGreaterThan(0);
+      expect(result.series[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].posts).toEqual([mockPostDetail]);
     });
 
     it('should handle empty repository response', async () => {
@@ -124,8 +124,8 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.metrics).toHaveLength(3);
-      expect(result.metrics.every(m => m.posts.length === 0)).toBe(true);
+      expect(result.series).toHaveLength(3);
+      expect(result.series.every(m => m.posts.length === 0)).toBe(true);
     });
 
     it('should handle repository errors', async () => {
@@ -174,9 +174,9 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.metrics.length).toBe(2);
-      expect(result.metrics[0].posts).toEqual([mockPostDetail]);
-      expect(result.metrics[1].posts).toEqual([mockPostDetail]);
+      expect(result.series.length).toBe(2);
+      expect(result.series[0].posts).toEqual([mockPostDetail]);
+      expect(result.series[1].posts).toEqual([mockPostDetail]);
     });
 
     it('should format weekly dates correctly', async () => {
@@ -192,7 +192,7 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.metrics[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
     });
 
     it('should format monthly dates correctly', async () => {
@@ -208,7 +208,7 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.metrics[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
     });
   });
 });
