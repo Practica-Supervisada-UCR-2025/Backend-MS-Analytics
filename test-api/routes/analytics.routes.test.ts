@@ -375,9 +375,9 @@ describe('Analytics Routes', () => {
           aggregatedByInterval: 'weekly',
           limit: 3,
           series: [
-            { date: '2023-W01 (2022-12-26 to 2023-01-01)', posts: [] },
-            { date: '2023-W02 (2023-01-02 to 2023-01-08)', posts: [] },
-            { date: '2023-W03 (2023-01-09 to 2023-01-15)', posts: [] }
+            { date: '2023-W01', posts: [] },
+            { date: '2023-W02', posts: [] },
+            { date: '2023-W03', posts: [] }
           ]
         }
       };
@@ -399,7 +399,7 @@ describe('Analytics Routes', () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.metrics.length).toBeGreaterThan(1);
+      expect(response.body.data.series.length).toBeGreaterThan(1);
     });
 
     it('should return 403 for non-admin users', async () => {

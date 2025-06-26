@@ -70,9 +70,9 @@ describe('ReportAnalyticsService', () => {
       const result = await service.getReportVolumeStats(monthlyQuery);
 
       expect(result.series).toEqual([
-        { date: '2023-01 (2023-01-01 to 2023-01-31)', count: 10 },
-        { date: '2023-02 (2023-02-01 to 2023-02-28)', count: 15 },
-        { date: '2023-03 (2023-03-01 to 2023-03-31)', count: 20 }
+        { date: '2023-01', count: 10 },
+        { date: '2023-02', count: 15 },
+        { date: '2023-03', count: 20 }
       ]);
       expect(result.total).toBe(45);
       expect(result.aggregatedByInterval).toBe('monthly');

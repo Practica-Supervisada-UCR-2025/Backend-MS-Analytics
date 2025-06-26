@@ -86,7 +86,7 @@ describe('Posts Service', () => {
       expect(result.aggregatedByInterval).toBe('weekly');
       expect(result.limit).toBe(3);
       expect(result.series.length).toBeGreaterThan(0);
-      expect(result.series[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^2023-W\d{2}$/);
       expect(result.series[0].posts).toEqual([mockPostDetail]);
     });
 
@@ -110,7 +110,7 @@ describe('Posts Service', () => {
       expect(result.aggregatedByInterval).toBe('monthly');
       expect(result.limit).toBe(3);
       expect(result.series.length).toBeGreaterThan(0);
-      expect(result.series[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^\d{4}-\d{2}$/);
       expect(result.series[0].posts).toEqual([mockPostDetail]);
     });
 
@@ -192,7 +192,7 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.series[0].date).toMatch(/^2023-W\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^2023-W\d{2}$/);
     });
 
     it('should format monthly dates correctly', async () => {
@@ -208,7 +208,7 @@ describe('Posts Service', () => {
         limit: 3
       });
 
-      expect(result.series[0].date).toMatch(/^\d{4}-\d{2} \(\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\)/);
+      expect(result.series[0].date).toMatch(/^\d{4}-\d{2}$/);
     });
   });
 });

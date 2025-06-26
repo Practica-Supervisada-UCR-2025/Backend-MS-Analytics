@@ -25,27 +25,24 @@ export abstract class AnalyticsBaseService {
     if (interval === 'monthly') {
       // Check if date is already in the uniform format
       if (date.includes(' to ')) {
-        return date; // Already formatted
+        // Extract just the YYYY-MM part from the formatted string
+        const match = date.match(/^(\d{4}-\d{2})/);
+        return match ? match[1] : date;
       }
       
-      // date is in YYYY-MM format, convert to YYYY-MM (start date to end date)
-      const [year, month] = date.split('-');
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of month
-      
-      const startStr = startDate.toISOString().split('T')[0];
-      const endStr = endDate.toISOString().split('T')[0];
-      
-      return `${date} (${startStr} to ${endStr})`;
+      // date is in YYYY-MM format, return as is
+      return date;
     }
     
     if (interval === 'weekly') {
       // Check if date is already in the uniform format
       if (date.includes(' to ')) {
-        return date; // Already formatted
+        // Extract just the YYYY-WNN part from the formatted string
+        const match = date.match(/^(\d{4}-W\d{2})/);
+        return match ? match[1] : date;
       }
       
-      // Parse the week format and convert to uniform format
+      // Parse the week format and return the simple format
       // Handle different input formats: "Week 19-2025", "Week 19 2025", "2025-W19"
       let weekNumber: number;
       let year: number;
@@ -72,24 +69,7 @@ export abstract class AnalyticsBaseService {
         return date; // Return as is if can't parse
       }
       
-      // Calculate start and end dates of the week
-      const startOfYear = new Date(year, 0, 1);
-      const daysToAdd = (weekNumber - 1) * 7;
-      const startOfWeek = new Date(startOfYear);
-      startOfWeek.setDate(startOfYear.getDate() + daysToAdd);
-      
-      // Adjust to Monday (ISO week starts on Monday)
-      const dayOfWeek = startOfWeek.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-      startOfWeek.setDate(startOfWeek.getDate() - daysToMonday);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      
-      const startStr = startOfWeek.toISOString().split('T')[0];
-      const endStr = endOfWeek.toISOString().split('T')[0];
-      
-      return `${year}-W${weekNumber.toString().padStart(2, '0')} (${startStr} to ${endStr})`;
+      return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
     }
     
     return date; // Fallback

@@ -73,8 +73,8 @@ describe('AnalyticsBaseService', () => {
       const result = service.exposedGenerateCompleteSeries(data, query, false);
 
       expect(result).toEqual([
-        { date: '2023-01 (2023-01-01 to 2023-01-31)', count: 10 },
-        { date: '2023-02 (2023-02-01 to 2023-02-28)', count: 15 }
+        { date: '2023-01', count: 10 },
+        { date: '2023-02', count: 15 }
       ]);
     });
   });
