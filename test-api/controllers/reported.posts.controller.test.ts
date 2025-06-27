@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import { getReportedPostsController } from '../../src/features/analytics/controllers/reported.posts.controller';
 import { ReportedPostsService } from '../../src/features/analytics/services/reported.posts.service';
 import { AuthenticatedRequest } from '../../src/features/middleware/authenticate.middleware';
-import { ValidationError } from 'yup';
 
 // Mock the service
 jest.mock('../../src/features/analytics/services/reported.posts.service');
@@ -30,18 +29,24 @@ describe('ReportedPostsController', () => {
   });
 
   describe('getReportedPostsController', () => {
-    const mockData = {
-      metrics: [
-        { date: '2023-01-01', count: 5 },
-        { date: '2023-01-02', count: 3 }
+    const mockServiceData = {
+      aggregatedByInterval: 'daily',
+      series: [
+        {
+          count: 5,
+          date: '2023-01-01',
+        },
+        {
+          count: 3,
+          date: '2023-01-02',
+        },
       ],
       total: 8,
-      aggregatedByInterval: 'daily' as const
     };
 
     it('should return data for admin users', async () => {
       // Mock service response
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockResolvedValue(mockData);
+      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockResolvedValue(mockServiceData);
 
       mockRequest.query = {
         interval: 'daily',
@@ -55,27 +60,27 @@ describe('ReportedPostsController', () => {
         nextFunction
       );
 
-      expect(mockResponse.json).toHaveBeenCalledWith(mockData);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Reported posts statistics retrieved successfully',
+        data: mockServiceData
+      });
       expect(mockResponse.status).not.toHaveBeenCalled();
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
     it('should deny access for non-admin users', async () => {
-      mockRequest.user = { 
-        role: 'user',
-        email: 'user@example.com',
-        uuid: '123e4567-e89b-12d3-a456-426614174001'
-      };
+      mockRequest.user = { role: 'user', email: 'user@test.com', uuid: '456' };
 
       await getReportedPostsController(
-        mockRequest as AuthenticatedRequest,
+        mockRequest as any,
         mockResponse as Response,
         nextFunction
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Access denied' });
-      expect(nextFunction).not.toHaveBeenCalled();
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Only admins can access analytics'
+      });
     });
 
     it('should handle validation errors', async () => {
@@ -91,8 +96,11 @@ describe('ReportedPostsController', () => {
         nextFunction
       );
 
-      expect(nextFunction).toHaveBeenCalled();
-      expect(nextFunction.mock.calls[0][0]).toBeInstanceOf(ValidationError);
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Validation Error',
+        details: expect.any(Array)
+      });
     });
 
     it('should handle service errors', async () => {
@@ -117,7 +125,7 @@ describe('ReportedPostsController', () => {
 
     it('should handle missing interval parameter', async () => {
       // Mock service response for default interval
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockResolvedValue(mockData);
+      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockResolvedValue(mockServiceData);
 
       mockRequest.query = {
         startDate: '2023-01-01',
@@ -130,14 +138,17 @@ describe('ReportedPostsController', () => {
         nextFunction
       );
 
-      expect(mockResponse.json).toHaveBeenCalledWith(mockData);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Reported posts statistics retrieved successfully',
+        data: mockServiceData
+      });
       expect(nextFunction).not.toHaveBeenCalled();
 
       // Verify service was called with default interval
       expect(ReportedPostsService.prototype.getReportedMetrics).toHaveBeenCalledWith(
-        'daily', // default interval
         '2023-01-01',
-        '2023-01-31'
+        '2023-01-31',
+        'daily' // default interval
       );
     });
   });

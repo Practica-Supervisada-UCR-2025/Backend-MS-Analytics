@@ -1,9 +1,9 @@
 import * as yup from 'yup';
 
 export interface ReportedPostsQuery {
-  interval?: 'daily' | 'weekly' | 'monthly';
   startDate?: string;
   endDate?: string;
+  period?: 'daily' | 'weekly' | 'monthly';
 }
 
 const isValidDateString = (value: string): boolean => {
@@ -34,12 +34,12 @@ const createDateField = (fieldName: string, fallbackDaysAgo = 0) =>
 
 export const reportedPostsQuerySchema = yup
   .object({
-    interval: yup
-      .string()
-      .oneOf(['daily', 'weekly', 'monthly'], 'Invalid interval. Must be daily, weekly, or monthly')
-      .default('daily'),
     startDate: createDateField('startDate', 30).required('startDate is required'),
     endDate: createDateField('endDate').required('endDate is required'),
+    period: yup
+      .string()
+      .oneOf(['daily', 'weekly', 'monthly'], 'Invalid period. Must be daily, weekly, or monthly')
+      .default('daily'),
   })
   .test('date-range', 'startDate must be before or equal to endDate', function (value) {
     const { startDate, endDate } = value;

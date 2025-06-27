@@ -56,7 +56,7 @@ describe('ReportedPostsRepository', () => {
 
       expect(client.query).toHaveBeenCalledWith(
         expect.stringContaining('generate_series'),
-        ['week', baseQuery.startDate, baseQuery.endDate, '"Week "IW YYYY', '1 week']
+        ['week', baseQuery.startDate, baseQuery.endDate, 'IYYY-"W"IW', '1 week']
       );
     });
 

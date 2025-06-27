@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { reportedPostsQuerySchema } from '../dto/reported.posts.dto';
+import { validateUserGrowthQuery } from '../dto/user-growth-query.dto';
 import { ReportedPostsService } from '../services/reported.posts.service';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
+import { BadRequestError } from '../../../utils/errors/api-error';
 
 const reportedPostsService = new ReportedPostsService();
 
@@ -12,23 +13,34 @@ export const getReportedPostsController = async (
 ) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({
+        message: 'Only admins can access analytics'
+      });
     }
 
-    // Validate and get default values from schema
-    const validatedData = await reportedPostsQuerySchema.validate(req.query, { 
-      abortEarly: false,
-      stripUnknown: true
-    });
+    // Validate and parse query parameters using the same DTO as user growth
+    const queryParams = await validateUserGrowthQuery(req.query);
     
     const data = await reportedPostsService.getReportedMetrics(
-      validatedData.interval,
-      validatedData.startDate,
-      validatedData.endDate
+      queryParams.startDate!,
+      queryParams.endDate!,
+      queryParams.interval as 'daily' | 'weekly' | 'monthly'
     );
     
-    res.json(data);
-  } catch (err) {
+    // Return the response in the same format as user growth endpoint
+    res.json({
+      message: 'Reported posts statistics retrieved successfully',
+      data: data
+    });
+  } catch (err: any) {
+    // Handle BadRequestError from DTO validation
+    if (err instanceof BadRequestError) {
+      return res.status(400).json({
+        message: 'Validation Error',
+        details: err.details || [err.message],
+      });
+    }
+    // Other server errors
     next(err);
   }
 };

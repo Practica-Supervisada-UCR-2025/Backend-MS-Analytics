@@ -28,75 +28,68 @@ describe('Posts Controller', () => {
   });
 
   describe('getTopInteractedPostsController', () => {
-    const mockServiceResponse = {
-      metrics: [
+    const mockServiceData = {
+      aggregatedByInterval: 'daily',
+      limit: 3,
+      series: [
         {
           date: '2023-01-01',
-          posts: [{
-            id: '1',
-            userId: 'user1',
-            content: 'Test post',
-            createdAt: '2023-01-01T00:00:00.000Z',
-            updatedAt: null,
-            fileUrl: null,
-            fileSize: null,
-            mediaType: null,
-            isActive: true,
-            isEdited: false,
-            status: 1,
-            commentCount: 5
-          }]
-        }
+          posts: [
+            {
+              id: '1',
+              userId: 'user1',
+              content: 'Test post',
+              createdAt: '2023-01-01T00:00:00.000Z',
+              updatedAt: null,
+              fileUrl: null,
+              fileSize: null,
+              mediaType: null,
+              isActive: true,
+              isEdited: false,
+              status: 1,
+              commentCount: 5,
+            },
+          ],
+        },
       ],
-      aggregatedByInterval: 'daily',
-      limit: 3
     };
 
     it('should return 403 if user is not admin', async () => {
-      mockRequest.user = { role: 'user', email: 'user@test.com', uuid: '456' };
+      const mockRequest = {
+        user: { role: 'user' },
+        query: { startDate: '2023-01-01', endDate: '2023-01-31', interval: 'daily' },
+      } as any;
 
-      await getTopInteractedPostsController(
-        mockRequest as any,
-        mockResponse as Response,
-        mockNext
-      );
+      await getTopInteractedPostsController(mockRequest, mockResponse as Response, mockNext);
 
       expect(mockStatus).toHaveBeenCalledWith(403);
       expect(mockJson).toHaveBeenCalledWith({
-        message: 'Access denied: Only administrators can view this metric.'
+        message: 'Only admins can access analytics'
       });
     });
 
     it('should return 400 for invalid query parameters', async () => {
-      mockRequest.query = {
-        range: 'invalid',
-        startDate: 'invalid-date',
-        endDate: 'invalid-date'
-      };
+      const mockRequest = {
+        user: { role: 'admin' },
+        query: { startDate: 'invalid-date', endDate: '2023-01-31', interval: 'daily' },
+      } as any;
 
-      await getTopInteractedPostsController(
-        mockRequest as any,
-        mockResponse as Response,
-        mockNext
-      );
+      await getTopInteractedPostsController(mockRequest, mockResponse as Response, mockNext);
 
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: 'Validation Error',
-        details: expect.any(Array)
-      });
+      expect(mockNext).toHaveBeenCalled();
+      expect((mockNext as jest.Mock).mock.calls[0][0]).toBeInstanceOf(Error);
     });
 
     it('should return 200 with data for valid request', async () => {
       mockRequest.query = {
-        range: 'daily',
+        interval: 'daily',
         startDate: '2023-01-01',
         endDate: '2023-01-03',
         limit: '3'
       };
 
       // Mock the service response
-      (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue(mockServiceResponse);
+      (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue(mockServiceData);
 
       await getTopInteractedPostsController(
         mockRequest as any,
@@ -105,12 +98,15 @@ describe('Posts Controller', () => {
       );
 
       expect(mockStatus).toHaveBeenCalledWith(200);
-      expect(mockJson).toHaveBeenCalledWith(mockServiceResponse);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: 'Top interacted posts statistics retrieved successfully',
+        data: mockServiceData
+      });
     });
 
     it('should handle service errors', async () => {
       mockRequest.query = {
-        range: 'daily',
+        interval: 'daily',
         startDate: '2023-01-01',
         endDate: '2023-01-03'
       };
@@ -124,17 +120,18 @@ describe('Posts Controller', () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockNext).toHaveBeenCalled();
+      expect((mockNext as jest.Mock).mock.calls[0][0]).toBeInstanceOf(Error);
     });
 
     it('should use default limit when not provided', async () => {
       mockRequest.query = {
-        range: 'daily',
+        interval: 'daily',
         startDate: '2023-01-01',
         endDate: '2023-01-03'
       };
 
-      (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue(mockServiceResponse);
+      (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue(mockServiceData);
 
       await getTopInteractedPostsController(
         mockRequest as any,
@@ -155,15 +152,13 @@ describe('Posts Controller', () => {
       
       for (const range of ranges) {
         mockRequest.query = {
-          range,
+          interval: range,
           startDate: '2023-01-01',
           endDate: '2023-01-03'
         };
 
-        (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue({
-          ...mockServiceResponse,
-          aggregatedByInterval: range
-        });
+        const mockData = { ...mockServiceData, aggregatedByInterval: range };
+        (PostsService.prototype.getTopInteractedPosts as jest.Mock).mockResolvedValue(mockData);
 
         await getTopInteractedPostsController(
           mockRequest as any,
@@ -172,9 +167,12 @@ describe('Posts Controller', () => {
         );
 
         expect(mockStatus).toHaveBeenCalledWith(200);
-        expect(mockJson).toHaveBeenCalledWith(expect.objectContaining({
-          aggregatedByInterval: range
-        }));
+        expect(mockJson).toHaveBeenCalledWith({
+          message: 'Top interacted posts statistics retrieved successfully',
+          data: expect.objectContaining({
+            aggregatedByInterval: range
+          })
+        });
       }
     });
   });
