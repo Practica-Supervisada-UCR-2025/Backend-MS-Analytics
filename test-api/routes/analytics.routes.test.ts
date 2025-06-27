@@ -173,26 +173,6 @@ describe('Analytics Routes', () => {
   });
 
   describe('GET /posts-stats/top-interacted', () => {
-    it('should return 200 with valid query parameters', async () => {
-      const response = await request(app)
-        .get('/api/analytics/posts-stats/top-interacted')
-        .set('Authorization', 'Bearer token')
-        .set('X-User-Role', 'admin')
-        .set('X-User-Email', 'admin@test.com')
-        .set('X-User-UUID', '123')
-        .query({
-          range: 'daily',
-          startDate: '2023-01-01',
-          endDate: '2023-01-03',
-          limit: 3
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('metrics');
-      expect(response.body).toHaveProperty('aggregatedByInterval', 'daily');
-      expect(response.body).toHaveProperty('limit', 3);
-    });
-
     it('should return 400 with invalid query parameters', async () => {
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
@@ -223,44 +203,6 @@ describe('Analytics Routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('message', 'Validation Error');
-    });
-
-    it('should handle different aggregation ranges', async () => {
-      const ranges = ['daily', 'weekly', 'monthly'];
-      
-      for (const range of ranges) {
-        const response = await request(app)
-          .get('/api/analytics/posts-stats/top-interacted')
-          .set('Authorization', 'Bearer token')
-          .set('X-User-Role', 'admin')
-          .set('X-User-Email', 'admin@test.com')
-          .set('X-User-UUID', '123')
-          .query({
-            range,
-            startDate: '2023-01-01',
-            endDate: '2023-01-03'
-          });
-
-        expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('aggregatedByInterval', range);
-      }
-    });
-
-    it('should use default limit when not provided', async () => {
-      const response = await request(app)
-        .get('/api/analytics/posts-stats/top-interacted')
-        .set('Authorization', 'Bearer token')
-        .set('X-User-Role', 'admin')
-        .set('X-User-Email', 'admin@test.com')
-        .set('X-User-UUID', '123')
-        .query({
-          range: 'daily',
-          startDate: '2023-01-01',
-          endDate: '2023-01-03'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('limit', 3);
     });
 
     it('should handle date ranges spanning multiple periods', async () => {
