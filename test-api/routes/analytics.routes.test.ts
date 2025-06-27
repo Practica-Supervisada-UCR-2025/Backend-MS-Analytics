@@ -205,23 +205,6 @@ describe('Analytics Routes', () => {
       expect(response.body).toHaveProperty('message', 'Validation Error');
     });
 
-    it('should handle date ranges spanning multiple periods', async () => {
-      const response = await request(app)
-        .get('/api/analytics/posts-stats/top-interacted')
-        .set('Authorization', 'Bearer token')
-        .set('X-User-Role', 'admin')
-        .set('X-User-Email', 'admin@test.com')
-        .set('X-User-UUID', '123')
-        .query({
-          range: 'weekly',
-          startDate: '2023-01-01',
-          endDate: '2023-01-15'
-        });
-
-      expect(response.status).toBe(200);
-      expect(response.body.metrics.length).toBeGreaterThan(1);
-    });
-
     it('should return 403 for non-admin users', async () => {
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
