@@ -4,7 +4,7 @@ import * as db from '../../src/config/database';
 jest.mock('../../src/config/database', () => ({
   __esModule: true,
   default: {
-    query: jest.fn(), // 👈 esto garantiza que client.query exista y sea un mock
+    query: jest.fn(),
   },
 }));
 
@@ -34,16 +34,32 @@ describe('getPostCountsByPeriod', () => {
   it('should return correctly formatted results for weekly period', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
-        { label: '01-06-2025 al 07-06-2025', count: '8' },
-        { label: '08-06-2025 al 14-06-2025', count: '6' },
+        { label: '2025-W23', count: '8' },
+        { label: '2025-W24', count: '6' },
       ],
     });
 
     const result = await getPostCountsByPeriod('2025-06-01', '2025-06-30', 'weekly');
 
     expect(result).toEqual([
-      { label: '01-06-2025 al 07-06-2025', count: 8 },
-      { label: '08-06-2025 al 14-06-2025', count: 6 },
+      { label: '2025-W23', count: 8 },
+      { label: '2025-W24', count: 6 },
+    ]);
+  });
+
+  it('should return correctly formatted results for monthly period', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { label: '06-2025', count: '12' },
+        { label: '07-2025', count: '15' },
+      ],
+    });
+
+    const result = await getPostCountsByPeriod('2025-06-01', '2025-07-31', 'monthly');
+
+    expect(result).toEqual([
+      { label: '06-2025', count: 12 },
+      { label: '07-2025', count: 15 },
     ]);
   });
 

@@ -7,6 +7,7 @@ describe('Error Handler Middleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let nextFunction: NextFunction;
+  let originalConsoleError: typeof console.error;
 
   beforeEach(() => {
     mockRequest = {};
@@ -15,6 +16,14 @@ describe('Error Handler Middleware', () => {
       json: jest.fn(),
     };
     nextFunction = jest.fn();
+    // Mock console.error
+    originalConsoleError = console.error;
+    console.error = jest.fn();
+  });
+
+  afterEach(() => {
+    // Restore console.error
+    console.error = originalConsoleError;
   });
 
   it('should handle Yup validation errors', () => {

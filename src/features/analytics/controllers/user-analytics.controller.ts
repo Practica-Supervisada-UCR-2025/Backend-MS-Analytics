@@ -34,4 +34,28 @@ export class UserAnalyticsController {
       next(error);
     }
   }
+
+  async getUserGrowthStatsNonCumulative(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Check if user is admin
+      const authReq = req as AuthenticatedRequest;
+      if (authReq.user.role !== 'admin') {
+        throw new ForbiddenError('Only admins can access analytics');
+      }
+      
+      // Validate and parse query parameters - fixed the typo in await
+      const queryParams = await validateUserGrowthQuery(req.query);
+      
+      // Get the data from service
+      const growthStats = await this.userAnalyticsService.getUserGrowthStatsNonCumulative(queryParams);
+      
+      // Return the response
+      res.status(200).json({
+        message: 'User growth statistics retrieved successfully',
+        data: growthStats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
