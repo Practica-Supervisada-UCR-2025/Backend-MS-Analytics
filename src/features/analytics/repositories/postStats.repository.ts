@@ -11,15 +11,15 @@ export const getPostCountsByPeriod = async (
   switch (period) {
     case 'daily':
       dateTruncFormat = 'day';
-      toCharFormat = 'DD-MM-YYYY';
+      toCharFormat = 'YYYY-MM-DD';
       break;
     case 'weekly':
       dateTruncFormat = 'week';
-      toCharFormat = `IYYY-"W"IW`; // ISO week format
+      toCharFormat = 'IYYY-"W"IW'; // ISO week format: 2025-W19
       break;
     case 'monthly':
       dateTruncFormat = 'month';
-      toCharFormat = 'MM-YYYY';
+      toCharFormat = 'YYYY-MM';
       break;
     default:
       throw new Error('Invalid period');

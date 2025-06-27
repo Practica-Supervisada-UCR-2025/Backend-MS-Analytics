@@ -38,13 +38,13 @@ router.get(
   authenticateJWT,
   getReportedPostsController as RequestHandler
 );
-// http://localhost:3005/api/analytics/posts-stats/reported?range=weekly&startDate=2025-05-11&endDate=2025-06-20
+// http://localhost:3005/api/analytics/posts-stats/reported?interval=weekly&startDate=2025-05-11&endDate=2025-06-20
 
 router.get(
-  '/posts-stats/top-interacted', // Un nombre de endpoint descriptivo
+  '/posts-stats/top-interacted', 
   authenticateJWT,
-  getTopInteractedPostsController as RequestHandler // Usa el nuevo controlador
+  getTopInteractedPostsController as RequestHandler
 );
-// http://localhost:3005/api/analytics/posts-stats/top-interacted?range=weekly&startDate=2025-05-11&endDate=2025-06-20&limit=4
+// http://localhost:3005/api/analytics/posts-stats/top-interacted?interval=weekly&startDate=2025-05-11&endDate=2025-06-20&limit=4
 
 export default router;

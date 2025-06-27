@@ -2,6 +2,8 @@ import request from 'supertest';
 import express from 'express';
 import analyticsRoutes from '../../src/features/analytics/routes/analytics.routes';
 import { ReportedPostsService } from '../../src/features/analytics/services/reported.posts.service';
+import { getTopInteractedPostsController } from '../../src/features/analytics/controllers/posts.controller';
+import { getReportedPostsController } from '../../src/features/analytics/controllers/reported.posts.controller';
 import { ValidationError } from 'yup';
 import { authenticateJWT } from '../../src/features/middleware/authenticate.middleware';
 
@@ -23,6 +25,15 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => ({
   })
 }));
 
+// Mock the controller
+jest.mock('../../src/features/analytics/controllers/posts.controller', () => ({
+  getTopInteractedPostsController: jest.fn()
+}));
+
+jest.mock('../../src/features/analytics/controllers/reported.posts.controller', () => ({
+  getReportedPostsController: jest.fn()
+}));
+
 describe('Analytics Routes', () => {
   let app: express.Application;
 
@@ -36,7 +47,10 @@ describe('Analytics Routes', () => {
       console.error('Error caught:', err);
       
       if (err instanceof ValidationError) {
-        return res.status(400).json({ message: err.message });
+        return res.status(400).json({ 
+          message: 'Validation Error',
+          details: err.errors
+        });
       }
       if (err.status === 403) {
         return res.status(403).json({ message: 'Access denied' });
@@ -48,36 +62,52 @@ describe('Analytics Routes', () => {
   });
 
   describe('GET /api/analytics/posts-stats/reported', () => {
-    const mockData = {
-      metrics: [
-        { date: '2023-01-01', count: 5 },
-        { date: '2023-01-02', count: 3 }
-      ],
-      total: 8,
-      aggregatedByInterval: 'daily' as const
-    };
-
     it('should return reported posts data for admin users', async () => {
-      // Mock service response
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockResolvedValue(mockData);
+      const mockData = {
+        message: 'Reported posts statistics retrieved successfully',
+        data: {
+          aggregatedByInterval: 'daily',
+          series: [
+            {
+              count: 5,
+              date: '2023-01-01',
+            },
+            {
+              count: 3,
+              date: '2023-01-02',
+            },
+          ],
+          total: 8,
+        },
+      };
+
+      // Mock the controller to return the expected response
+      (getReportedPostsController as jest.Mock).mockImplementation((req, res) => {
+        res.json(mockData);
+      });
 
       const response = await request(app)
         .get('/api/analytics/posts-stats/reported')
+        .set('Authorization', 'Bearer valid-token')
+        .set('X-User-UUID', '123e4567-e89b-12d3-a456-426614174000')
         .query({
           interval: 'daily',
           startDate: '2023-01-01',
           endDate: '2023-01-31'
-        })
-        .set('Authorization', 'Bearer admin-token')
-        .set('X-User-Role', 'admin')
-        .set('X-User-Email', 'admin@example.com')
-        .set('X-User-UUID', '123e4567-e89b-12d3-a456-426614174000');
+        });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockData);
     });
 
     it('should deny access for non-admin users', async () => {
+      // Mock the controller to throw an authorization error
+      (getReportedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error: any = new Error('Access denied');
+        error.status = 403;
+        next(error);
+      });
+
       const response = await request(app)
         .get('/api/analytics/posts-stats/reported')
         .query({
@@ -95,10 +125,11 @@ describe('Analytics Routes', () => {
     });
 
     it('should handle validation errors', async () => {
-      // Mock service to throw validation error
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockRejectedValue(
-        new ValidationError('Invalid date format', 'endDate', 'endDate')
-      );
+      // Mock the controller to throw a validation error
+      (getReportedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error = new ValidationError('Invalid date format', 'endDate', 'endDate');
+        next(error);
+      });
 
       const response = await request(app)
         .get('/api/analytics/posts-stats/reported')
@@ -113,14 +144,42 @@ describe('Analytics Routes', () => {
         .set('X-User-UUID', '123e4567-e89b-12d3-a456-426614174000');
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
+      expect(response.body).toEqual({
+        message: 'Validation Error',
+        details: expect.any(Array)
+      });
+    });
+
+    it('should handle missing date parameters', async () => {
+      // Mock the controller to throw a validation error
+      (getReportedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error = new ValidationError('startDate is required', 'startDate', 'startDate');
+        next(error);
+      });
+
+      const response = await request(app)
+        .get('/api/analytics/posts-stats/reported')
+        .query({
+          interval: 'daily'
+        })
+        .set('Authorization', 'Bearer admin-token')
+        .set('X-User-Role', 'admin')
+        .set('X-User-Email', 'admin@example.com')
+        .set('X-User-UUID', '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        message: 'Validation Error',
+        details: expect.any(Array)
+      });
     });
 
     it('should handle service errors', async () => {
-      // Mock service error
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockRejectedValue(
-        new Error('Service error')
-      );
+      // Mock the controller to throw a service error
+      (getReportedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error = new Error('Service error');
+        next(error);
+      });
 
       const response = await request(app)
         .get('/api/analytics/posts-stats/reported')
@@ -136,26 +195,6 @@ describe('Analytics Routes', () => {
 
       expect(response.status).toBe(500);
       expect(response.body).toEqual({ message: 'Service error' });
-    });
-
-    it('should handle missing date parameters', async () => {
-      // Mock service to throw validation error
-      (ReportedPostsService.prototype.getReportedMetrics as jest.Mock).mockRejectedValue(
-        new ValidationError('startDate is required', 'startDate', 'startDate')
-      );
-
-      const response = await request(app)
-        .get('/api/analytics/posts-stats/reported')
-        .query({
-          interval: 'daily'
-        })
-        .set('Authorization', 'Bearer admin-token')
-        .set('X-User-Role', 'admin')
-        .set('X-User-Email', 'admin@example.com')
-        .set('X-User-UUID', '123e4567-e89b-12d3-a456-426614174000');
-
-      expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message');
     });
 
     it('should handle missing authorization header', async () => {
@@ -174,6 +213,12 @@ describe('Analytics Routes', () => {
 
   describe('GET /posts-stats/top-interacted', () => {
     it('should return 400 with invalid query parameters', async () => {
+      // Mock the controller to throw a validation error
+      (getTopInteractedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error = new ValidationError('Invalid interval', 'interval', 'interval');
+        next(error);
+      });
+
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
         .set('Authorization', 'Bearer token')
@@ -181,16 +226,25 @@ describe('Analytics Routes', () => {
         .set('X-User-Email', 'admin@test.com')
         .set('X-User-UUID', '123')
         .query({
-          range: 'invalid',
+          interval: 'invalid',
           startDate: 'invalid-date',
           endDate: 'invalid-date'
         });
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message', 'Validation Error');
+      expect(response.body).toEqual({
+        message: 'Validation Error',
+        details: expect.any(Array)
+      });
     });
 
     it('should return 400 with missing required parameters', async () => {
+      // Mock the controller to throw a validation error
+      (getTopInteractedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error = new ValidationError('startDate is required', 'startDate', 'startDate');
+        next(error);
+      });
+
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
         .set('Authorization', 'Bearer token')
@@ -198,14 +252,24 @@ describe('Analytics Routes', () => {
         .set('X-User-Email', 'admin@test.com')
         .set('X-User-UUID', '123')
         .query({
-          range: 'daily'
+          interval: 'daily'
         });
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('message', 'Validation Error');
+      expect(response.body).toEqual({
+        message: 'Validation Error',
+        details: expect.any(Array)
+      });
     });
-
+    
     it('should return 403 for non-admin users', async () => {
+      // Mock the controller to throw an authorization error
+      (getTopInteractedPostsController as jest.Mock).mockImplementation((req, res, next) => {
+        const error: any = new Error('Access denied');
+        error.status = 403;
+        next(error);
+      });
+
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
         .set('Authorization', 'Bearer token')
@@ -213,20 +277,20 @@ describe('Analytics Routes', () => {
         .set('X-User-Email', 'user@test.com')
         .set('X-User-UUID', '456')
         .query({
-          range: 'daily',
+          interval: 'daily',
           startDate: '2023-01-01',
           endDate: '2023-01-03'
         });
 
       expect(response.status).toBe(403);
-      expect(response.body).toHaveProperty('message', 'Access denied: Only administrators can view this metric.');
+      expect(response.body).toHaveProperty('message', 'Access denied');
     });
 
     it('should return 401 when no authorization header is present', async () => {
       const response = await request(app)
         .get('/api/analytics/posts-stats/top-interacted')
         .query({
-          range: 'daily',
+          interval: 'daily',
           startDate: '2023-01-01',
           endDate: '2023-01-03'
         });

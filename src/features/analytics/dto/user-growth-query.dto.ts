@@ -10,7 +10,6 @@ export const userGrowthQuerySchema = yup.object({
     
   startDate: yup
     .string()
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid startDate format. Use YYYY-MM-DD')
     .transform((value) => {
       if (!value) {
         // Default to 30 days before endDate or today
@@ -18,19 +17,24 @@ export const userGrowthQuerySchema = yup.object({
         endDate.setDate(endDate.getDate() - 30);
         return endDate.toISOString().split('T')[0];
       }
-      return value;
-    }),
+      // Remove time component if present
+      return value.split('T')[0];
+    })
+    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid startDate format. Use YYYY-MM-DD')
+    .required('startDate is required'),
     
   endDate: yup
     .string()
-    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid endDate format. Use YYYY-MM-DD')
     .transform((value) => {
       if (!value) {
         // Default to today
         return new Date().toISOString().split('T')[0];
       }
-      return value;
+      // Remove time component if present
+      return value.split('T')[0];
     })
+    .matches(/^\d{4}-\d{2}-\d{2}$/, 'Invalid endDate format. Use YYYY-MM-DD')
+    .required('endDate is required')
     .test(
       'date-range',
       'startDate must be before or equal to endDate',

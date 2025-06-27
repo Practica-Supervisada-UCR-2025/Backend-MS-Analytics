@@ -36,7 +36,7 @@ export const getTopInteractedPostsMetrics = async (
     case 'weekly':
       dateTrunc = 'week';
       interval = '1 week';
-      format = '"Week "IW-YYYY';
+      format = 'IYYY-"W"IW'; // ISO week format: 2025-W19
       break;
     case 'monthly':
       dateTrunc = 'month';
