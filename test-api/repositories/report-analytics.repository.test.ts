@@ -178,5 +178,55 @@ describe('ReportAnalyticsRepository', () => {
         [startDate, endDate]
       );
     });
+
+    it('should handle null total value', async () => {
+      (client.query as jest.Mock).mockResolvedValueOnce({
+        rows: [{ total: null }]
+      });
+
+      const result = await repository.getTotalReports(startDate, endDate);
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('getTotalOverallReports', () => {
+    it('should return total overall reports count', async () => {
+      (client.query as jest.Mock).mockResolvedValueOnce({
+        rows: [{ total: '500' }]
+      });
+
+      const result = await repository.getTotalOverallReports();
+      
+      expect(result).toBe(500);
+      expect(client.query).toHaveBeenCalledWith(
+        expect.stringMatching(/SELECT\s+COUNT\(\*\)\s+as\s+total\s+FROM\s+reports/)
+      );
+    });
+
+    it('should handle zero reports', async () => {
+      (client.query as jest.Mock).mockResolvedValueOnce({
+        rows: [{ total: '0' }]
+      });
+
+      const result = await repository.getTotalOverallReports();
+      expect(result).toBe(0);
+    });
+
+    it('should handle null total value', async () => {
+      (client.query as jest.Mock).mockResolvedValueOnce({
+        rows: [{ total: null }]
+      });
+
+      const result = await repository.getTotalOverallReports();
+      expect(result).toBe(0);
+    });
+
+    it('should handle database errors', async () => {
+      (client.query as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(repository.getTotalOverallReports())
+        .rejects
+        .toThrow(InternalServerError);
+    });
   });
 });

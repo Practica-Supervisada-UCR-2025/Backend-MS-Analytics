@@ -47,7 +47,7 @@ export class ReportAnalyticsRepository implements IReportAnalyticsRepository {
       
       return result.rows.map(row => ({
         date: row.date,
-        count: parseInt(row.report_count)
+        count: Number(row.report_count) || 0 // Ensure invalid numbers return 0
       }));
     } catch (error) {
       console.error('Error fetching report volume data:', error);
@@ -73,10 +73,7 @@ export class ReportAnalyticsRepository implements IReportAnalyticsRepository {
 
   async getTotalOverallReports(): Promise<number> {
     try {
-      const query = `
-        SELECT COUNT(*) as total
-        FROM reports
-      `;
+      const query = 'SELECT COUNT(*) as total FROM reports';
       
       const result = await client.query(query);
       return parseInt(result.rows[0].total || '0');
