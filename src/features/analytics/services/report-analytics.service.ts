@@ -6,6 +6,7 @@ import { AnalyticsBaseService, DataPoint } from './analytics-base.service';
 interface ReportVolumeResponse {
   series: DataPoint[];
   total: number;
+  overallTotal: number;
   aggregatedByInterval: string;
 }
 
@@ -24,6 +25,9 @@ export class ReportAnalyticsService extends AnalyticsBaseService {
         query.startDate!,
         query.endDate!
       );
+
+      // Get the total count for all time (without date filters)
+      const overallTotal = await this.repository.getTotalOverallReports();
       
       // Get the report data grouped by interval
       const reportData = await this.repository.getReportVolumeData({
@@ -42,6 +46,7 @@ export class ReportAnalyticsService extends AnalyticsBaseService {
       return {
         series,
         total,
+        overallTotal,
         aggregatedByInterval: query.interval || 'daily'
       };
     } catch (error) {

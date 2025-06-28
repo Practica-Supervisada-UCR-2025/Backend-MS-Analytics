@@ -1,5 +1,5 @@
 import { StatsQueryDTO } from '../dto/postStats.dto';
-import { getPostCountsByPeriod } from '../repositories/postStats.repository';
+import { getPostCountsByPeriod, getTotalPostsCount } from '../repositories/postStats.repository';
 
 interface AnalyticsDataPoint {
   date: string;
@@ -11,6 +11,7 @@ interface PostStatsResponse {
   data: {
     series: AnalyticsDataPoint[];
     total: number;
+    overallTotal: number;
   };
 }
 
@@ -38,6 +39,8 @@ export const getTotalPostsStatsService = async (
 
   const total = data.reduce((sum, entry) => sum + entry.count, 0);
 
+   const overallTotal = await getTotalPostsCount();
+
   const sorted = data.sort((a, b) => {
     if (period === 'weekly') {
       return a.label.localeCompare(b.label);
@@ -57,6 +60,7 @@ export const getTotalPostsStatsService = async (
     data: {
       series,
       total,
+      overallTotal,
     },
   };
 };
