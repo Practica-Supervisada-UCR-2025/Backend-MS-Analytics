@@ -44,3 +44,19 @@ export const getPostCountsByPeriod = async (
     count: Number(row.count),
   }));
 };
+
+export const getTotalPostsCount = async (): Promise<number> => {
+  try {
+    const query = `
+      SELECT COUNT(*) as total
+      FROM posts
+      WHERE is_active = true
+    `;
+    
+    const result = await client.query(query);
+    return parseInt(result.rows[0].total || '0');
+  } catch (error) {
+    console.error('Error fetching total posts count:', error);
+    throw new Error('Failed to retrieve total posts count');
+  }
+};
