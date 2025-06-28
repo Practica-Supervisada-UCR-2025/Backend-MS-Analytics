@@ -19,7 +19,7 @@ router.get(
 );
 
 router.get(
-  '/posts-stats/volume',
+  '/reports-stats/volume',
   authenticateJWT,
   reportAnalyticsController.getReportVolumeStats.bind(reportAnalyticsController)
 );

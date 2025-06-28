@@ -109,11 +109,14 @@ describe('Analytics Routes Integration Tests', () => {
     });
   });
 
-  describe('GET /api/analytics/posts-stats/volume', () => {
+  describe('GET /api/analytics/reports-stats/volume', () => {
     it('should return report volume statistics for authenticated admin', async () => {
       // Mock database responses
       (client.query as jest.Mock)
         .mockResolvedValueOnce({                                          // getTotalReports
+          rows: [{ total: '50' }]
+        })
+        .mockResolvedValueOnce({                                          // getTotalOverallReports
           rows: [{ total: '50' }]
         })
         .mockResolvedValueOnce({                                          // getReportVolumeData
@@ -124,7 +127,7 @@ describe('Analytics Routes Integration Tests', () => {
         });
 
       const response = await request(app)
-        .get('/api/analytics/posts-stats/volume')
+        .get('/api/analytics/reports-stats/volume')
         .set('Authorization', 'Bearer valid-token')
         .query({
           startDate: '2023-01-01',
@@ -141,6 +144,7 @@ describe('Analytics Routes Integration Tests', () => {
             { date: '2023-01-02', count: 15 }
           ],
           total: 50,
+          overallTotal: 50,
           aggregatedByInterval: 'daily'
         }
       });
@@ -154,7 +158,7 @@ describe('Analytics Routes Integration Tests', () => {
       }));
 
       const response = await request(app)
-        .get('/api/analytics/posts-stats/volume')
+        .get('/api/analytics/reports-stats/volume')
         .set('Authorization', 'Bearer valid-token');
 
       expect(response.status).toBe(403);
@@ -166,14 +170,14 @@ describe('Analytics Routes Integration Tests', () => {
 
     it('should return 401 for missing authentication', async () => {
       const response = await request(app)
-        .get('/api/analytics/posts-stats/volume');
+        .get('/api/analytics/reports-stats/volume');
 
       expect(response.status).toBe(401);
     });
 
     it('should return 400 for invalid query parameters', async () => {
       const response = await request(app)
-        .get('/api/analytics/posts-stats/volume')
+        .get('/api/analytics/reports-stats/volume')
         .set('Authorization', 'Bearer valid-token')
         .query({
           startDate: 'invalid-date',
@@ -193,7 +197,7 @@ describe('Analytics Routes Integration Tests', () => {
       (client.query as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const response = await request(app)
-        .get('/api/analytics/posts-stats/volume')
+        .get('/api/analytics/reports-stats/volume')
         .set('Authorization', 'Bearer valid-token')
         .query({
           startDate: '2023-01-01',
